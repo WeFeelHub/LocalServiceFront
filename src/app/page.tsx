@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Header from '@/app/components/header'
 import CameraInfo from '@/app/components/camerainfo'
-import Camera from '@/app/components/camera'
+import {Camera} from '@/app/components/Camera'
 
 
 
