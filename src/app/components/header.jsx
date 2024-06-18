@@ -1,5 +1,6 @@
 'use client'
-import { Fragment, useState } from 'react'
+import { useEffect, useState } from 'react'
+import api from '../api/api' // Importa a instância configurada do Axios
 import {
   Dialog,
   DialogPanel,
@@ -13,24 +14,10 @@ import {
   Transition,
 } from '@headlessui/react'
 import {
-  ArrowPathIcon,
   Bars3Icon,
-  ChartPieIcon,
-  CursorArrowRaysIcon,
-  FingerPrintIcon,
-  SquaresPlusIcon,
+  ChevronDownIcon,
   XMarkIcon,
-} from '@heroicons/react/24/outline'
-import { ChevronDownIcon, PhoneIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
-
-const products = [
-    { name: 'lorem', description: 'lorem', href: '#', icon: ChartPieIcon },
-    { name: 'lorem', description: 'lorem', href: '#', icon: CursorArrowRaysIcon },
-    { name: 'lorem', description: 'lorem', href: '#', icon: FingerPrintIcon },
-    { name: 'lorem', description: 'lorem', href: '#', icon: SquaresPlusIcon },
-    { name: 'lorem', description: 'lorem', href: '#', icon: ArrowPathIcon },
-  ];
-
+} from '@heroicons/react/20/solid'
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -38,6 +25,17 @@ function classNames(...classes) {
 
 export default function Example() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [events, setEvents] = useState([])
+
+  useEffect(() => {
+    api.get('/evento') // Faz uma requisição GET à rota /evento
+      .then(response => {
+        setEvents(response.data)
+      })
+      .catch(error => {
+        console.error('There was an error fetching the data!', error)
+      })
+  }, [])
 
   return (
     <header className="bg-white">
@@ -61,7 +59,7 @@ export default function Example() {
         <PopoverGroup className="hidden lg:flex lg:gap-x-12">
           <Popover className="relative">
             <PopoverButton className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900">
-                LOREM
+              Eventos
               <ChevronDownIcon className="h-5 w-5 flex-none text-gray-400" aria-hidden="true" />
             </PopoverButton>
 
@@ -75,25 +73,22 @@ export default function Example() {
             >
               <PopoverPanel className="absolute -left-8 top-full z-10 mt-3 w-screen max-w-md overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-900/5">
                 <div className="p-4">
-                  {products.map((item) => (
+                  {events.map((event) => (
                     <div
-                      key={item.name}
+                      key={event.ID_EVENTO}
                       className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50"
                     >
-                      <div className="flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-gray-50 group-hover:bg-white">
-                        <item.icon className="h-6 w-6 text-gray-600 group-hover:text-indigo-600" aria-hidden="true" />
-                      </div>
                       <div className="flex-auto">
-                        <a href={item.href} className="block font-semibold text-gray-900">
-                          {item.name}
+                        <a href={`#`} className="block font-semibold text-gray-900">
+                          {event.NM_EVENTO}
                           <span className="absolute inset-0" />
                         </a>
-                        <p className="mt-1 text-gray-600">{item.description}</p>
+                        <p className="mt-1 text-gray-600">Valor Atual: {event.VL_ATUAL}</p>
+                        <p className="mt-1 text-gray-600">Tipo de Reconhecimento: {event.TP_RECON}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                
               </PopoverPanel>
             </Transition>
           </Popover>
@@ -101,7 +96,6 @@ export default function Example() {
           <a href="#" className="text-sm font-semibold leading-6 text-gray-900">
             Cameras
           </a>
-         
         </PopoverGroup>
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <a href="#" className="text-sm font-semibold leading-6 text-gray-900">
@@ -137,13 +131,23 @@ export default function Example() {
                   {({ open }) => (
                     <>
                       <DisclosureButton className="flex w-full items-center justify-between rounded-lg py-2 pl-3 pr-3.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
-                        Lorem
+                        Eventos
                         <ChevronDownIcon
                           className={classNames(open ? 'rotate-180' : '', 'h-5 w-5 flex-none')}
                           aria-hidden="true"
                         />
                       </DisclosureButton>
-                      
+                      <DisclosurePanel className="mt-2 space-y-2">
+                        {events.map((event) => (
+                          <a
+                            key={event.ID_EVENTO}
+                            href={`#`}
+                            className="block rounded-lg py-2 pl-6 pr-3 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                          >
+                            {event.NM_EVENTO}
+                          </a>
+                        ))}
+                      </DisclosurePanel>
                     </>
                   )}
                 </Disclosure>
