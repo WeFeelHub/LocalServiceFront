@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import api from '../api/api' // Importa a instância configurada do Axios
+import axios from 'axios'
+import localforage from 'localforage'
 import {
   Dialog,
   DialogPanel,
@@ -23,19 +24,42 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function Example() {
+export default function Example({ onSelectEvent }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [events, setEvents] = useState([])
 
   useEffect(() => {
-    api.get('/evento') // Faz uma requisição GET à rota /evento
-      .then(response => {
+    const fetchEvents = async () => {
+      try {
+        const token = await localforage.getItem('token')
+        if (!token) {
+          console.error('No token found!')
+          return
+        }
+
+        const response = await axios.get('http://127.0.0.1:5002/eventos', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
         setEvents(response.data)
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('There was an error fetching the data!', error)
-      })
+      }
+    }
+
+    fetchEvents()
   }, [])
+
+  const handleEventClick = (event) => {
+    console.log('Evento selecionado:', event)
+    onSelectEvent(event.ID_EVENTO)
+  }
+
+  const logout = () => {
+    localforage.removeItem('token')
+    window.location.href = '/login'
+  }
 
   return (
     <header className="bg-white">
@@ -77,9 +101,10 @@ export default function Example() {
                     <div
                       key={event.ID_EVENTO}
                       className="group relative flex items-center gap-x-6 rounded-lg p-4 text-sm leading-6 hover:bg-gray-50"
+                      onClick={() => handleEventClick(event)}
                     >
                       <div className="flex-auto">
-                        <a href={`#`} className="block font-semibold text-gray-900">
+                        <a href="#" className="block font-semibold text-gray-900">
                           {event.NM_EVENTO}
                           <span className="absolute inset-0" />
                         </a>
@@ -96,12 +121,13 @@ export default function Example() {
           <a href="#" className="text-sm font-semibold leading-6 text-gray-900">
             Cameras
           </a>
+          <button
+            onClick={logout}
+            className="text-sm font-semibold leading-6 text-red-500"
+          >
+            Logout
+          </button>
         </PopoverGroup>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a href="#" className="text-sm font-semibold leading-6 text-gray-900">
-            Log in <span aria-hidden="true">&rarr;</span>
-          </a>
-        </div>
       </nav>
       <Dialog className="lg:hidden" open={mobileMenuOpen} onClose={setMobileMenuOpen}>
         <div className="fixed inset-0 z-10" />
@@ -141,8 +167,9 @@ export default function Example() {
                         {events.map((event) => (
                           <a
                             key={event.ID_EVENTO}
-                            href={`#`}
+                            href="#"
                             className="block rounded-lg py-2 pl-6 pr-3 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                            onClick={() => handleEventClick(event)}
                           >
                             {event.NM_EVENTO}
                           </a>
@@ -169,14 +196,12 @@ export default function Example() {
                 >
                   Company
                 </a>
-              </div>
-              <div className="py-6">
-                <a
-                  href="#"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                <button
+                  onClick={logout}
+                  className="block w-full rounded-lg px-3 py-2 text-base font-semibold leading-7 text-red-500 hover:bg-gray-50"
                 >
-                  Log in
-                </a>
+                  Logout
+                </button>
               </div>
             </div>
           </div>

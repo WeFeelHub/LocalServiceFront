@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Certifique-se de usar 'next/navigation'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/app/components/header';
-import Camera from '@/app/components/Camera';
+import Cameras from '@/app/components/Cameras';
 
-// Função que verifica a autenticação do usuário
 const checkAuthentication = () => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('authToken');
-    console.log('Token:', token); // Adicione este log
+    const token = localStorage.getItem('authToken'); // Ensure the key matches the key used in login
+    console.log('Token:', 'Token Encontrado'); // Log the token
     return !!token;
   }
   return false;
@@ -17,21 +16,22 @@ const checkAuthentication = () => {
 
 export default function Home() {
   const router = useRouter();
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     const isAuthenticated = checkAuthentication();
-    console.log('isAuthenticated:', isAuthenticated); // Adicione este log
+    console.log('isAuthenticated:', isAuthenticated); // Log the authentication status
     if (!isAuthenticated) {
-      console.log('Redirecionando para login'); // Adicione este log
+      console.log('Redirecionando para login'); // Log the redirection
       router.push('/login');
     }
   }, [router]);
 
   return (
     <>
-      <Header />
+      <Header onSelectEvent={setSelectedEvent} />
       <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-white">
-        <Camera />
+        <Cameras selectedEvent={selectedEvent} />
       </main>
     </>
   );

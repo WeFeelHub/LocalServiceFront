@@ -1,14 +1,13 @@
-'use client';
-
-// components/Camera.js
 import { useRef, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import CameraInfo from './CameraInfo';
+import localforage from 'localforage';
 
 function Camera({ index, selectedEvent }) {
   const videoRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [captureInterval, setCaptureInterval] = useState(5); // Intervalo padrão de 5 segundos
-  const [stream, setStream] = useState(null);
+  const [captureInterval, setCaptureInterval] = useState(5);
+  const [cameraInfo, setCameraInfo] = useState(null);
 
   useEffect(() => {
     async function getMedia() {
@@ -29,7 +28,31 @@ function Camera({ index, selectedEvent }) {
     }
   }, [index]);
 
-  const captureImage = useCallback(() => {
+  useEffect(() => {
+    async function fetchCameraInfo() {
+      if (!selectedEvent) {
+        console.error('selectedEvent está indefinido');
+        return;
+      }
+      try {
+        const token = await localforage.getItem('authToken');
+        const response = await axios.get(`http://127.0.0.1:5002/getCamerasByEvent/${selectedEvent}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        console.log('Response data:', response.data);
+        const cameraData = response.data.find(cam => cam.ID_CAMERA === index);
+        setCameraInfo(cameraData);
+      } catch (error) {
+        console.error('Erro ao buscar informações da câmera:', error);
+      }
+    }
+
+    fetchCameraInfo();
+  }, [index, selectedEvent]);
+
+  const captureImage = useCallback(async () => {
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
@@ -38,7 +61,7 @@ function Camera({ index, selectedEvent }) {
     const image = canvas.toDataURL('image/png');
     const base64Image = image.replace(/^data:image\/(png|jpeg);base64,/, '');
 
-    const token = localStorage.getItem('token');
+    const token = await localforage.getItem('authToken');
     axios.post('http://127.0.0.1:5006/upload', {
       image: base64Image,
       ID_EVENTO: selectedEvent
@@ -66,7 +89,7 @@ function Camera({ index, selectedEvent }) {
     if (isCapturing) {
       intervalId = setInterval(() => {
         captureImage();
-      }, captureInterval * 1000); // Converter segundos para milissegundos
+      }, captureInterval * 1000);
     } else {
       clearInterval(intervalId);
     }
@@ -83,6 +106,7 @@ function Camera({ index, selectedEvent }) {
   return (
     <div className="flex flex-col items-center mb-4">
       <video ref={videoRef} autoPlay playsInline className="w-full max-w-lg border-2 border-gray-300 rounded-lg mb-2" />
+      {cameraInfo && <CameraInfo camera={cameraInfo} />}
       <div className="flex space-x-2">
         <button
           onClick={handleCaptureToggle}
@@ -112,13 +136,4 @@ function Camera({ index, selectedEvent }) {
   );
 }
 
-export default function Cameras({ selectedEvent }) {
-  return (
-    <div className="grid grid-cols-2 gap-4">
-      <Camera index={1} selectedEvent={selectedEvent} />
-      <Camera index={2} selectedEvent={selectedEvent} />
-      <Camera index={3} selectedEvent={selectedEvent} />
-      <Camera index={4} selectedEvent={selectedEvent} />
-    </div>
-  );
-}
+export default Camera;

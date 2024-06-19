@@ -1,30 +1,19 @@
 "use client";
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import localforage from 'localforage';
-import Link from 'next/link';
 
-const Login: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [rememberMe, setRememberMe] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = await localforage.getItem<string>('token');
-      if (token) {
-        redirectTo('/');
-      }
-    };
-
-    checkToken();
-  }, []);
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
-      const response = await axios.post('http://127.0.0.1:5005/login', {
+      const response = await axios.post('http://127.0.0.1:5002/login', {
         DS_EMAIL: email,
         CD_SENHA: password,
       }, {
@@ -40,6 +29,7 @@ const Login: React.FC = () => {
         await localforage.setItem('token', token);
         await localforage.setItem('email', email);
         await localforage.setItem('ID_EMPRESA', ID_EMPRESA);
+        localStorage.setItem('authToken', token); // Store the token in localStorage
 
         if (rememberMe) {
           setCookie('token', token, 7);
@@ -51,28 +41,34 @@ const Login: React.FC = () => {
       }
     } catch (error) {
       console.error("Ocorreu um erro ao tentar fazer login:", error);
-      setErrorMessage("Ocorreu um erro ao tentar fazer login. Por favor, tente novamente.");
+      if (error.response && error.response.data) {
+        setErrorMessage(error.response.data.message || "Ocorreu um erro ao tentar fazer login. Por favor, tente novamente.");
+      } else {
+        setErrorMessage("Ocorreu um erro ao tentar fazer login. Por favor, tente novamente.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const redirectTo = (path: string) => {
+  const redirectTo = (path) => {
     window.location.href = path;
   };
 
-  const setCookie = (name: string, value: string, days: number) => {
+  const setCookie = (name, value, days) => {
     const date = new Date();
     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
     const expires = "expires=" + date.toUTCString();
-    document.cookie = `${name}=${value};${expires};path=/`;
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
   };
 
-  const getCookie = (name: string) => {
+  const getCookie = (name) => {
     const nameEQ = name + "=";
     const ca = document.cookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
+    for (let i = 0; i < ca.length; i++) {
       let c = ca[i];
-      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
     }
     return null;
   };
@@ -95,7 +91,7 @@ const Login: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm text-black"
               />
             </div>
             <div>
@@ -110,11 +106,21 @@ const Login: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 text-black sm:text-sm"
               />
             </div>
             <div className="flex items-center">
-              
+              <input
+                id="rememberMe"
+                name="rememberMe"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 text-cyan-600 focus:ring-cyan-500 border-gray-300 rounded"
+              />
+              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
+                Lembrar de mim
+              </label>
             </div>
           </div>
           {errorMessage && <p className="text-red-600 mt-5 text-center">{errorMessage}</p>}
@@ -122,14 +128,12 @@ const Login: React.FC = () => {
             type="button"
             onClick={handleLogin}
             className="mt-8 w-full bg-cyan-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+            disabled={loading}
           >
-            Entrar
+            {loading ? 'Carregando...' : 'Entrar'}
           </button>
-         
         </form>
       </div>
     </div>
   );
 }
-
-export default Login;
