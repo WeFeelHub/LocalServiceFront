@@ -61,19 +61,23 @@ function Camera({ index, selectedEvent }) {
     const image = canvas.toDataURL('image/png');
     const base64Image = image.replace(/^data:image\/(png|jpeg);base64,/, '');
 
-    const token = await localforage.getItem('authToken');
-    axios.post('http://127.0.0.1:5006/upload', {
-      image: base64Image,
-      ID_EVENTO: selectedEvent
-    }, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    }).then(response => {
-      console.log('Imagem enviada com sucesso:', response.data);
-    }).catch(error => {
+    try {
+      const token = await localforage.getItem('authToken');
+      const empresa_nome = await localforage.getItem('empresa_nome'); // Obter o nome da empresa do localforage
+
+      await axios.post('http://127.0.0.1:5006/upload', {
+        image: base64Image,
+        ID_EVENTO: selectedEvent,
+        empresa_nome: empresa_nome
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      console.log('Imagem enviada com sucesso');
+    } catch (error) {
       console.error('Erro ao enviar imagem:', error);
-    });
+    }
   }, [selectedEvent]);
 
   const handleCaptureToggle = () => {
